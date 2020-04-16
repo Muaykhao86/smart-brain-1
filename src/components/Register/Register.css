@@ -1,0 +1,4 @@
+.hover-black:hover{
+    /* Just to override bootstrap */
+    background-color: #000 !important; 
+}

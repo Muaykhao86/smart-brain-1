@@ -1,4 +1,5 @@
 import React from 'react';
+import "./Signin.css";
 
 class Signin extends React.Component {
   constructor(props) {
@@ -17,22 +18,45 @@ class Signin extends React.Component {
     this.setState({signInPassword: event.target.value})
   }
 
+  saveAuthTokenInSessions = (token) => {
+    // * Session storage in browser, can use session or localStorage but local persists longer, if you open another window local stays seeion doesnt
+    window.sessionStorage.setItem('token', token)
+  }
+
+  // * SIGN IN
   onSubmitSignIn = () => {
     fetch('http://localhost:3000/signin', {
       method: 'post',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json'},
       body: JSON.stringify({
         email: this.state.signInEmail,
         password: this.state.signInPassword
       })
     })
       .then(response => response.json())
-      .then(user => {
-        if (user.id) {
+      .then(data => {
+    // * DO WE HAVE THIS USER AND ID?
+        if (data.userId && data.success === 'true') {
+          fetch(`http://localhost:3000/profile/${data.userId}`, {
+          method: 'get',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization' : data.token
+
+          },
+        })
+        .then(res => res.json())
+        .then(user => {
+      // * IF WE HAVE USER SAVE REDIS TOKEN, CHANGE ROUTE AND LOAD EM UP
+          if(user && user.email)
+          this.saveAuthTokenInSessions(data.token)
           this.props.loadUser(user)
-          this.props.onRouteChange('home');
-        }
-      })
+          this.props.onRouteChange('home')
+          })
+          .catch(console.log)
+      }})
+      .catch(console.log)
   }
 
   render() {
@@ -46,7 +70,7 @@ class Signin extends React.Component {
               <div className="mt3">
                 <label className="db fw6 lh-copy f6" htmlFor="email-address">Email</label>
                 <input
-                  className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+                  className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black"
                   type="email"
                   name="email-address"
                   id="email-address"
@@ -56,7 +80,7 @@ class Signin extends React.Component {
               <div className="mv3">
                 <label className="db fw6 lh-copy f6" htmlFor="password">Password</label>
                 <input
-                  className="b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+                  className="b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black"
                   type="password"
                   name="password"
                   id="password"
@@ -67,7 +91,7 @@ class Signin extends React.Component {
             <div className="">
               <input
                 onClick={this.onSubmitSignIn}
-                className="b ph3 pv2 input-reset ba b--black bg-transparent grow pointer f6 dib"
+                className="b ph3 pv2 input-reset ba b--black bg-transparent grow pointer f6 dib "
                 type="submit"
                 value="Sign in"
               />
